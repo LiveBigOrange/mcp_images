@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mcp_images": {
+      "command": "mcp_images",
+      "env": {
+        "VLM_API_BASE": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+        "VLM_MODEL": "qwen-vl-plus",
+        "VLM_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+        "VLM_LOG_LEVEL": "warn",
+        "VLM_TIMEOUT": "120"
+      }
+    }
+  }
+}

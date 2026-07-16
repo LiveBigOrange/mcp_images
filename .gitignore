@@ -1,0 +1,26 @@
+# Binaries
+bin/
+
+# IDE / Editor
+.arts/
+.codeartsdoer/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Project internal docs
+AGENTS.md

@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mcp_images — MCP 图片分析服务器</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#050506;
+  --surface:#0A0A0B;
+  --surface-2:#111113;
+  --border:rgba(255,255,255,0.06);
+  --border-hover:rgba(255,255,255,0.12);
+  --text:#EDEDEF;
+  --text-secondary:#8A8F98;
+  --accent:#6366F1;
+  --accent-2:#A855F7;
+  --accent-glow:rgba(99,102,241,0.15);
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.7;
+  letter-spacing:-0.01em;
+  overflow-x:hidden;
+}
+
+::selection{background:var(--accent);color:#fff}
+
+a{color:var(--accent);text-decoration:none;transition:color .2s}
+a:hover{color:var(--accent-2)}
+
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* Nav */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:rgba(5,5,6,0.8);
+  border-bottom:1px solid var(--border);
+}
+nav .container{display:flex;align-items:center;justify-content:space-between;height:56px}
+nav .logo{font-weight:600;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;letter-spacing:-0.02em}
+
+nav .links{display:flex;gap:28px;font-size:13px;font-weight:500}
+nav .links a{color:var(--text-secondary);transition:color .2s;cursor:pointer}
+nav .links a:hover{color:var(--text)}
+
+.lang-toggle{
+  font-size:12px;font-weight:600;
+  padding:4px 12px;border-radius:6px;
+  background:var(--surface-2);border:1px solid var(--border);
+  color:var(--text-secondary);cursor:pointer;
+  transition:all .2s;
+}
+.lang-toggle:hover{border-color:var(--border-hover);color:var(--text)}
+
+/* Hero */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  text-align:center;position:relative;overflow:hidden;
+  padding:120px 24px 80px;
+}
+.hero::before{
+  content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);
+  width:800px;height:800px;
+  background:radial-gradient(circle,rgba(99,102,241,0.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:200px;
+  background:linear-gradient(to top,var(--bg),transparent);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:100px;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);
+  font-size:12px;font-weight:500;color:var(--accent);
+  margin-bottom:24px;
+}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{
+  font-size:clamp(36px,6vw,72px);font-weight:700;line-height:1.05;
+  letter-spacing:-0.03em;margin-bottom:20px;
+}
+.hero h1 .gradient{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero p{font-size:18px;color:var(--text-secondary);max-width:560px;margin:0 auto 40px;line-height:1.6}
+.hero-buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 22px;border-radius:8px;font-size:14px;font-weight:500;
+  transition:all .2s;cursor:pointer;border:none;
+}
+.btn-primary{
+  background:var(--accent);color:#fff;
+  box-shadow:0 0 20px var(--accent-glow);
+}
+.btn-primary:hover{background:#5558e6;box-shadow:0 0 30px rgba(99,102,241,0.3);color:#fff}
+.btn-secondary{
+  background:var(--surface-2);color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:var(--border-hover);background:var(--surface);color:var(--text)}
+
+/* Section */
+section{padding:100px 0}
+section .section-label{
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--accent);margin-bottom:12px;
+}
+section h2{font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-0.02em;margin-bottom:16px}
+section .section-desc{color:var(--text-secondary);max-width:560px;margin-bottom:48px;font-size:16px;line-height:1.7}
+
+/* Bento Grid */
+.bento{display:grid;gap:12px}
+.bento-3{grid-template-columns:repeat(3,1fr)}
+.bento-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:768px){.bento-3,.bento-2{grid-template-columns:1fr}}
+
+.bento-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:28px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s;
+}
+.bento-card:hover{border-color:var(--border-hover)}
+.bento-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);
+}
+.bento-card .card-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:16px;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.15);
+}
+.bento-card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.bento-card p{font-size:14px;color:var(--text-secondary);line-height:1.6}
+
+.bento-card.wide{grid-column:span 2}
+@media(max-width:768px){.bento-card.wide{grid-column:span 1}}
+
+/* Code Block */
+.code-block{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  font-size:13px;
+}
+.code-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--border);
+  font-size:12px;color:var(--text-secondary);font-weight:500;
+}
+.code-dots{display:flex;gap:6px}
+.code-dots span{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.08)}
+.code-dots span:first-child{background:#FF5F57}
+.code-dots span:nth-child(2){background:#FEBC2E}
+.code-dots span:nth-child(3){background:#28C840}
+.code-body{padding:16px 20px;overflow-x:auto}
+.code-body pre{margin:0;white-space:pre;font-family:'SF Mono',Consolas,'Liberation Mono',Menlo,monospace;line-height:1.7}
+.code-body .k{color:#C678DD}
+.code-body .s{color:#98C379}
+.code-body .c{color:#5C6370;font-style:italic}
+.code-body .n{color:#E5C07B}
+.code-body .p{color:#ABB2BF}
+
+/* Architecture */
+.arch-flow{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  flex-wrap:wrap;padding:32px 0;
+}
+.arch-node{
+  padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;
+  background:var(--surface);border:1px solid var(--border);
+  white-space:nowrap;
+}
+.arch-node.accent{border-color:rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:var(--accent)}
+.arch-arrow{color:var(--text-secondary);font-size:16px}
+
+/* Feature list */
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.feature-list li{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:14px;color:var(--text-secondary);line-height:1.6;
+}
+.feature-list li .check{
+  flex-shrink:0;width:20px;height:20px;border-radius:50%;
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--accent);margin-top:2px;
+}
+
+/* Footer */
+footer{
+  border-top:1px solid var(--border);
+  padding:40px 0;
+  text-align:center;
+  font-size:13px;
+  color:var(--text-secondary);
+}
+
+/* Shimmer animation on cards */
+.bento-card{position:relative}
+.bento-card::after{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.02),transparent);
+  transition:none;pointer-events:none;
+}
+.bento-card:hover::after{
+  animation:shimmer .8s ease-out;
+}
+@keyframes shimmer{0%{left:-100%}100%{left:200%}}
+
+/* Responsive */
+@media(max-width:640px){
+  nav .links{gap:16px}
+  nav .links a{font-size:12px}
+  .hero{padding:100px 16px 60px}
+  .hero p{font-size:16px}
+  section{padding:60px 0}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6366F1"/><stop offset="100%" stop-color="#8B5CF6"/></linearGradient></defs>
+        <circle cx="5" cy="5" r="1.2" fill="currentColor" opacity="0.6"/>
+        <circle cx="5" cy="12" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="5" cy="19" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="5" cy="26" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="12" cy="5" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="12" cy="12" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="12" cy="19" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="12" cy="26" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="19" cy="5" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="19" cy="12" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="19" cy="19" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="19" cy="26" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="26" cy="5" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="26" cy="12" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="26" cy="19" r="1.2" fill="currentColor" opacity="0.3"/>
+        <circle cx="26" cy="26" r="1.2" fill="currentColor" opacity="0.6"/>
+        <circle cx="12" cy="21" r="3" fill="url(#lg)"/>
+        <circle cx="12" cy="21" r="5.5" fill="rgba(99,102,241,0.12)"/>
+        <line x1="2" y1="21" x2="29" y2="21" stroke="currentColor" stroke-width="0.7" opacity="0.3" stroke-dasharray="1.5 2"/>
+      </svg>
+      <span>mcp_images</span>
+    </div>
+    <div class="links">
+      <a href="#features" data-i18n="nav_features">功能</a>
+      <a href="#architecture" data-i18n="nav_arch">架构</a>
+      <a href="#quickstart" data-i18n="nav_quickstart">快速开始</a>
+      <a href="#examples" data-i18n="nav_examples">使用案例</a>
+      <a href="#config" data-i18n="nav_config">配置</a>
+      <button class="lang-toggle" onclick="toggleLang()" id="langBtn">EN</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div>
+    <div class="hero-badge"><span class="dot"></span> <span data-i18n="hero_badge">MCP 协议 · 开源</span></div>
+    <h1 data-i18n-html="hero_title">让 AI 看懂<br><span class="gradient">你的截图</span></h1>
+    <p data-i18n="hero_desc">mcp_images 是一个轻量级 MCP 图片分析服务器，将本地图片、剪贴板截图或 Base64 数据发送至 VLM API，返回精准的结构化分析结果。</p>
+    <div class="hero-buttons">
+      <a class="btn btn-primary" href="#quickstart" data-i18n="hero_cta">快速开始 →</a>
+      <a class="btn btn-secondary" href="https://github.com/LiveBigOrange/mcp_images" target="_blank">GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="section-label" data-i18n="features_label">核心功能</div>
+    <h2 data-i18n="features_title">三种方式，一个目标</h2>
+    <p class="section-desc" data-i18n="features_desc">无论图片来自文件、剪贴板还是 Base64 编码，mcp_images 都能高效处理并交给 VLM 分析。</p>
+    <div class="bento bento-3">
+      <div class="bento-card">
+        <div class="card-icon">📁</div>
+        <h3>describe_image_file</h3>
+        <p data-i18n="features_file_desc">传入本地图片绝对路径，自动解码、处理、分析。支持 JPEG、PNG、BMP、TIFF、WebP 格式。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">📋</div>
+        <h3>describe_clipboard_image</h3>
+        <p data-i18n="features_clip_desc">直接读取系统剪贴板中的截图，无需保存文件。Windows 使用 Win32 API，Linux 使用 xclip/wl-paste，macOS 使用 osascript，WSL 环境下自动通过 PowerShell 访问 Windows 剪贴板。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🔤</div>
+        <h3>describe_base64_image</h3>
+        <p data-i18n="features_b64_desc">接收 Base64 编码的图片数据，适用于 IDE 将对话中的图片以 Base64 形式传递的场景。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="container">
+    <div class="section-label" data-i18n="arch_label">架构设计</div>
+    <h2 data-i18n="arch_title">精简、高效、可扩展</h2>
+    <p class="section-desc" data-i18n="arch_desc">Go 单二进制 + stdio JSON-RPC，零依赖运行，与任何兼容 MCP 的 AI 工具无缝集成。</p>
+
+    <div class="arch-flow">
+      <div class="arch-node" data-i18n="arch_ai_tool">AI 工具</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node accent">stdio JSON-RPC</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node" data-i18n="arch_image_proc">图片处理</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node accent">VLM API</div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node" data-i18n="arch_result">结构化结果</div>
+    </div>
+
+    <div class="bento bento-3" style="margin-top:32px">
+      <div class="bento-card">
+        <div class="card-icon">⚡</div>
+        <h3 data-i18n="arch_perf_title">高性能图片处理</h3>
+        <p data-i18n="arch_perf_desc">draw.Draw 批量色彩转换 + Pix 直接操作，比逐像素 At/Set 快 5-10 倍。Lanczos 算法缩放，自动 EXIF 旋转。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🔄</div>
+        <h3 data-i18n="arch_retry_title">智能重试机制</h3>
+        <p data-i18n="arch_retry_desc">VLM 请求支持指数退避重试（最多 2 次），自动识别超时、429、5xx 等可重试错误，提升服务可靠性。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🔒</div>
+        <h3 data-i18n="arch_conc_title">并发安全</h3>
+        <p data-i18n="arch_conc_desc">writeMu 互斥锁保证 stdout 写入有序，goroutine + WaitGroup 管理请求生命周期，优雅关闭不丢响应。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart">
+  <div class="container">
+    <div class="section-label" data-i18n="quickstart_label">快速开始</div>
+    <h2 data-i18n="quickstart_title">快速上手</h2>
+    <p class="section-desc" data-i18n-html="quickstart_desc">编译、配置、启动，即可在 AI 工具中使用图片分析能力。支持两种配置格式：标准 <code>mcp.json</code> 通用格式（Claude Code / Cursor / Trae / Codex 等）和 opencode 专用格式。两者的关键区别在于 <code>command</code> 类型（字符串 vs 数组）和字段名（<code>env</code> vs <code>environment</code>）。</p>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="quickstart_build_label">1. 编译</span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="quickstart_build_win_title"># Windows</span>
+<span class="p">./</span>build<span class="p">.</span>ps1                  <span class="c" data-i18n="quickstart_build_build"># 编译</span>
+<span class="p">./</span>build<span class="p">.</span>ps1 <span class="n">-Action</span> test    <span class="c" data-i18n="quickstart_build_test"># 运行测试</span>
+<span class="p">./</span>build<span class="p">.</span>ps1 <span class="n">-Action</span> lint    <span class="c" data-i18n="quickstart_build_lint"># 代码检查</span>
+<span class="p">./</span>build<span class="p">.</span>ps1 <span class="n">-Action</span> build-all <span class="c" data-i18n="quickstart_build_xcompile"># 跨平台编译</span>
+
+<span class="c" data-i18n="quickstart_build_nix_title"># Linux / macOS</span>
+<span class="k">make</span> build      <span class="c" data-i18n="quickstart_build_build"># 编译</span>
+<span class="k">make</span> test       <span class="c" data-i18n="quickstart_build_test"># 运行测试</span>
+<span class="k">make</span> lint       <span class="c" data-i18n="quickstart_build_lint"># 代码检查</span>
+<span class="k">make</span> build-all  <span class="c" data-i18n="quickstart_build_xcompile"># 跨平台编译</span>
+
+<span class="c" data-i18n="quickstart_build_version_note"># 版本号从 VERSION 文件读取，也可通过 -Version 1.0.0 参数覆盖</span>
+<span class="c" data-i18n="quickstart_build_ldflags_note"># 通过 -ldflags 注入 version 和 buildTime</span></pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n-html="quickstart_std_label">2. 配置 mcp.json — 标准格式 <span style="font-weight:400;color:var(--text-secondary)">Claude Code / Cursor / Trae / Codex 等 AI 工具通用（参考项目根目录 <a href="../mcp.json.example" style="color:var(--accent)">mcp.json.example</a>）</span></span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="quickstart_std_a_title">// ---- 方案 A: Ollama（纯本地） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="s">"/path/to/mcp_images"</span><span class="p">,</span>
+      <span class="s">"env"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"http://localhost:11434/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen2.5vl:7b"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c" data-i18n="quickstart_std_b_title">// ---- 方案 B: vLLM（纯本地） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="s">"/path/to/mcp_images"</span><span class="p">,</span>
+      <span class="s">"env"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"http://localhost:8000/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"Qwen/Qwen2.5-VL-7B-Instruct"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c" data-i18n="quickstart_std_c_title">// ---- 方案 C: 云端 API（阿里云 DashScope / OpenAI） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="s">"/path/to/mcp_images"</span><span class="p">,</span>
+      <span class="s">"env"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen-vl-plus"</span><span class="p">,</span>
+        <span class="s">"VLM_API_KEY"</span><span class="p">:</span> <span class="s">"sk-your-key"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n-html="quickstart_oc_label">3. 配置 opencode — 专用格式 <span style="font-weight:400;color:var(--text-secondary)">仅 opencode 使用 <code>command</code> 数组 + <code>environment</code>，其他工具不兼容</span></span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="quickstart_std_a_title">// ---- 方案 A: Ollama（纯本地） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="p">[</span><span class="s">"/path/to/mcp-images-linux-amd64"</span><span class="p">],</span>
+      <span class="s">"environment"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"http://localhost:11434/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen2.5vl:7b"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c" data-i18n="quickstart_std_b_title">// ---- 方案 B: vLLM（纯本地） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="p">[</span><span class="s">"/path/to/mcp-images-linux-amd64"</span><span class="p">],</span>
+      <span class="s">"environment"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"http://localhost:8000/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"Qwen/Qwen2.5-VL-7B-Instruct"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c" data-i18n="quickstart_std_c_title">// ---- 方案 C: 云端 API（阿里云 DashScope / OpenAI） ----</span>
+<span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="p">[</span><span class="s">"/path/to/mcp-images-linux-amd64"</span><span class="p">],</span>
+      <span class="s">"environment"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen-vl-plus"</span><span class="p">,</span>
+        <span class="s">"VLM_API_KEY"</span><span class="p">:</span> <span class="s">"sk-your-key"</span><span class="p">,</span>
+        <span class="s">"VLM_LOG_LEVEL"</span><span class="p">:</span> <span class="s">"warn"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="quickstart_use_label">4. 在 AI 工具中使用</span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="quickstart_use_how"># 直接对话即可</span>
+<span class="s">"帮我分析这个报错截图"</span>
+<span class="s">"看看剪贴板里的图片"</span>
+<span class="s">"这张 UI 截图有什么问题？"</span></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="config">
+  <div class="container">
+    <div class="section-label" data-i18n="config_label">配置参考</div>
+    <h2 data-i18n="config_title">环境变量</h2>
+    <p class="section-desc" data-i18n="config_desc">所有配置通过环境变量传入。标准格式用 <code>env</code> 字段，opencode 用 <code>environment</code> 字段。</p>
+
+    <div class="bento bento-2">
+      <div class="bento-card">
+        <h3>VLM_API_BASE <span style="color:#EF4444;font-size:12px;font-weight:500" data-i18n="config_required">必填</span></h3>
+        <p data-i18n="config_base_desc">VLM API 端点地址，需兼容 OpenAI chat/completions 格式。支持云端服务或本地 Ollama / vLLM。</p>
+        <div class="code-block" style="margin-top:12px;border:none;padding:0">
+          <div class="code-body" style="padding:10px 14px;font-size:12px"><pre><span class="s">"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"</span>
+<span class="s">"http://localhost:11434/v1/chat/completions"</span></pre></div>
+        </div>
+      </div>
+      <div class="bento-card">
+        <h3>VLM_MODEL <span style="color:#EF4444;font-size:12px;font-weight:500" data-i18n="config_required">必填</span></h3>
+        <p data-i18n="config_model_desc">视觉语言模型名称，需支持图片输入。</p>
+        <div class="code-block" style="margin-top:12px;border:none;padding:0">
+          <div class="code-body" style="padding:10px 14px;font-size:12px"><pre><span class="s">"qwen-vl-plus"</span>
+<span class="s">"llava:13b"</span></pre></div>
+        </div>
+      </div>
+      <div class="bento-card">
+        <h3>VLM_API_KEY <span style="font-size:12px;font-weight:500;color:var(--text-secondary)" data-i18n="config_cloud_required">云端必填</span></h3>
+        <p data-i18n="config_key_desc">API 认证密钥。本地服务（localhost / 127.0.0.1）可省略。</p>
+      </div>
+      <div class="bento-card">
+        <h3>VLM_TIMEOUT <span style="font-size:12px;font-weight:500;color:var(--text-secondary)" data-i18n="config_optional">可选</span></h3>
+        <p data-i18n="config_timeout_desc">VLM API 请求超时秒数，默认 60。处理大图或网络不稳定时建议增大。</p>
+        <div class="code-block" style="margin-top:12px;border:none;padding:0">
+          <div class="code-body" style="padding:10px 14px;font-size:12px"><pre><span class="s">"120"</span></pre></div>
+        </div>
+      </div>
+      <div class="bento-card">
+        <h3>VLM_LOG_LEVEL <span style="font-size:12px;font-weight:500;color:var(--text-secondary)" data-i18n="config_optional">可选</span></h3>
+        <p data-i18n="config_log_desc">日志级别：debug / info / warn / error，默认 warn。日志输出到 stderr，不影响 MCP 通信。</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:48px;margin-bottom:20px;font-size:18px" data-i18n="config_compat_title">兼容的 VLM 服务</h3>
+    <div class="bento bento-3">
+      <div class="bento-card">
+        <h3 data-i18n="config_compat_dashscope">阿里云 DashScope</h3>
+        <p data-i18n="config_compat_dashscope_desc">qwen-vl-plus / qwen-vl-max，国内首选，延迟低。</p>
+      </div>
+      <div class="bento-card">
+        <h3 data-i18n="config_compat_ollama">Ollama 本地</h3>
+        <p data-i18n="config_compat_ollama_desc">llava / minicpm-v 等，零成本，数据不出本机。</p>
+      </div>
+      <div class="bento-card">
+        <h3 data-i18n="config_compat_openai">OpenAI 兼容</h3>
+        <p data-i18n="config_compat_openai_desc">任何兼容 OpenAI API 的视觉模型服务均可接入。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="examples">
+  <div class="container">
+    <div class="section-label" data-i18n="examples_label">使用案例</div>
+    <h2 data-i18n="examples_title">从零搭建本地图片分析</h2>
+    <p class="section-desc" data-i18n="examples_desc">以下以 Ollama + Qwen 视觉模型为例，演示如何零成本、数据不出本机地运行 mcp_images。量化后仅需 5-8GB 显存。</p>
+
+    <div class="bento bento-2" style="margin-bottom:32px">
+      <div class="bento-card">
+        <h3 data-i18n="examples_case_a_title">案例 A：Qwen2.5-VL 7B</h3>
+        <p data-i18n="examples_case_a_desc">量化后仅需约 5GB 显存，运行速度极快。中英文 OCR 优秀，识别代码和日志的准确度在轻量级模型中无可匹敌。</p>
+      </div>
+      <div class="bento-card">
+        <h3 data-i18n="examples_case_b_title">案例 B：Qwen3-VL 2B</h3>
+        <p data-i18n="examples_case_b_desc">量化后仅需约 3GB 显存，极致轻量。适合 UI 布局分析、简单图片描述等对速度要求更高的场景。</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:16px;margin-bottom:20px;font-size:18px" data-i18n="examples_scenarios_title">典型使用场景</h3>
+    <div class="bento bento-3" style="margin-bottom:32px">
+      <div class="bento-card">
+        <div class="card-icon">🖥️</div>
+        <h3 data-i18n="examples_scene1_title">GPU 监控截图分析</h3>
+        <p data-i18n="examples_scene1_desc">直接截取任务管理器或 GPU 监控面板，AI 自动分析各指标使用率、瓶颈诊断，快速定位性能问题。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🐛</div>
+        <h3 data-i18n="examples_scene2_title">报错日志排查</h3>
+        <p data-i18n="examples_scene2_desc">终端或 IDE 报错截图一键分析，识别错误类型、堆栈关键信息，给出修复建议。IDE 内直接使用剪贴板工具，无需保存文件。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🎨</div>
+        <h3 data-i18n="examples_scene3_title">UI 设计稿评审</h3>
+        <p data-i18n="examples_scene3_desc">将 UI 设计稿截图交给 AI，自动分析布局结构、间距一致性、色彩搭配，输出可操作的改进建议。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">📄</div>
+        <h3 data-i18n="examples_scene4_title">文档 / 白板 OCR</h3>
+        <p data-i18n="examples_scene4_desc">拍摄或截图文档、白板内容，AI 提取文字信息并结构化输出，支持中英文混合识别。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">💻</div>
+        <h3 data-i18n="examples_scene5_title">代码截图提取</h3>
+        <p data-i18n="examples_scene5_desc">从演示视频、会议共享屏幕或 PDF 中截取代码片段，AI 提取并还原为可粘贴的代码文本。</p>
+      </div>
+      <div class="bento-card">
+        <div class="card-icon">🔍</div>
+        <h3 data-i18n="examples_scene6_title">数据可视化解读</h3>
+        <p data-i18n="examples_scene6_desc">将图表、仪表盘截图交给 AI，自动提取数据趋势、极值、异常点，生成文字总结报告。</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="examples_step1">Step 1 — 安装 Ollama</span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="examples_step1_macos"># macOS / Linux</span>
+<span class="k">curl</span> <span class="p">-fsSL</span> https<span class="p">:</span>//ollama.com/install.sh | sh
+
+<span class="c" data-i18n="examples_step1_win"># Windows：从 https://ollama.com/download 下载安装包</span></pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="examples_step2">Step 2 — 拉取视觉模型</span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="examples_step2_precise"># 案例 A：高精度</span>
+<span class="k">ollama</span> pull qwen2.5vl<span class="p">:</span>7b
+
+<span class="c" data-i18n="examples_step2_light"># 案例 B：轻量快速</span>
+<span class="k">ollama</span> pull qwen3-vl<span class="p">:</span>2b-instruct</pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="examples_step3">Step 3 — 配置 mcp.json</span>
+        </div>
+        <div class="code-body"><pre><span class="p">{</span>
+  <span class="s">"mcpServers"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s">"mcp_images"</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s">"command"</span><span class="p">:</span> <span class="s">"/path/to/mcp_images"</span><span class="p">,</span>
+      <span class="s">"env"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"VLM_API_BASE"</span><span class="p">:</span> <span class="s">"http://localhost:11434/v1/chat/completions"</span><span class="p">,</span>
+        <span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen2.5vl:7b"</span><span class="p">,</span>
+        <span class="s">"VLM_TIMEOUT"</span><span class="p">:</span> <span class="s">"120"</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c" data-i18n="examples_step3_note"># 本地部署无需 VLM_API_KEY，省略即可</span></pre></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span data-i18n="examples_step4">Step 4 — 在 AI 工具中对话</span>
+        </div>
+        <div class="code-body"><pre><span class="c" data-i18n="examples_step4_ask"># 截图后直接问</span>
+<span class="s">"帮我看看这个报错是什么原因"</span>
+<span class="s">"分析一下剪贴板里的截图"</span>
+
+<span class="c" data-i18n="examples_step4_switch"># 切换模型只需修改 VLM_MODEL</span>
+<span class="s">"VLM_MODEL"</span><span class="p">:</span> <span class="s">"qwen3-vl:2b-instruct"</span></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-bottom:40px">
+  <div class="container">
+    <div class="section-label" data-i18n="tech_label">技术细节</div>
+    <h2 data-i18n="tech_title">为什么选择 mcp_images</h2>
+    <div class="bento bento-2">
+      <div class="bento-card">
+        <h3 data-i18n="tech_pipeline_title">图片处理管线</h3>
+        <ul class="feature-list">
+          <li><span class="check">✓</span> <span data-i18n="tech_pipeline_1">多格式解码：JPEG / PNG / BMP / TIFF / WebP</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_pipeline_2">自动 EXIF 方向校正</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_pipeline_3">色彩空间统一转换（draw.Draw 批量处理）</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_pipeline_4">智能缩放：超过 2048px 或 5MB 自动 Lanczos 降采样</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_pipeline_5">流式 Base64 编码，减少内存峰值</span></li>
+        </ul>
+      </div>
+      <div class="bento-card">
+        <h3 data-i18n="tech_safety_title">安全与可靠性</h3>
+        <ul class="feature-list">
+          <li><span class="check">✓</span> <span data-i18n="tech_safety_1">路径遍历防护，禁止 .. 和相对路径</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_safety_2">文件大小限制（20MB）防止 OOM</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_safety_3">VLM 请求指数退避重试（最多 2 次）</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_safety_4">并发安全：writeMu 保证响应有序</span></li>
+          <li><span class="check">✓</span> <span data-i18n="tech_safety_5">优雅关闭：5s 超时等待进行中请求完成</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p data-i18n="footer_line1">mcp_images — 开源 MCP 图片分析服务器 · 使用 Go 构建</p>
+    <p style="margin-top:8px;font-size:12px" data-i18n-html="footer_line2">详细开发指南请参阅项目根目录 <a href="../AGENTS.md">AGENTS.md</a> · <a href="https://github.com/LiveBigOrange/mcp_images" target="_blank">GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+const I18N = {
+  zh: {
+    nav_features: '功能',
+    nav_arch: '架构',
+    nav_quickstart: '快速开始',
+    nav_examples: '使用案例',
+    nav_config: '配置',
+    hero_badge: 'MCP 协议 · 开源',
+    hero_title: '让 AI 看懂<br><span class="gradient">你的截图</span>',
+    hero_desc: 'mcp_images 是一个轻量级 MCP 图片分析服务器，将本地图片、剪贴板截图或 Base64 数据发送至 VLM API，返回精准的结构化分析结果。',
+    hero_cta: '快速开始 →',
+    features_label: '核心功能',
+    features_title: '三种方式，一个目标',
+    features_desc: '无论图片来自文件、剪贴板还是 Base64 编码，mcp_images 都能高效处理并交给 VLM 分析。',
+    features_file_desc: '传入本地图片绝对路径，自动解码、处理、分析。支持 JPEG、PNG、BMP、TIFF、WebP 格式。',
+    features_clip_desc: '直接读取系统剪贴板中的截图，无需保存文件。Windows 使用 Win32 API，Linux 使用 xclip/wl-paste，macOS 使用 osascript，WSL 环境下自动通过 PowerShell 访问 Windows 剪贴板。',
+    features_b64_desc: '接收 Base64 编码的图片数据，适用于 IDE 将对话中的图片以 Base64 形式传递的场景。',
+    arch_label: '架构设计',
+    arch_title: '精简、高效、可扩展',
+    arch_desc: 'Go 单二进制 + stdio JSON-RPC，零依赖运行，与任何兼容 MCP 的 AI 工具无缝集成。',
+    arch_ai_tool: 'AI 工具',
+    arch_image_proc: '图片处理',
+    arch_result: '结构化结果',
+    arch_perf_title: '高性能图片处理',
+    arch_perf_desc: 'draw.Draw 批量色彩转换 + Pix 直接操作，比逐像素 At/Set 快 5-10 倍。Lanczos 算法缩放，自动 EXIF 旋转。',
+    arch_retry_title: '智能重试机制',
+    arch_retry_desc: 'VLM 请求支持指数退避重试（最多 2 次），自动识别超时、429、5xx 等可重试错误，提升服务可靠性。',
+    arch_conc_title: '并发安全',
+    arch_conc_desc: 'writeMu 互斥锁保证 stdout 写入有序，goroutine + WaitGroup 管理请求生命周期，优雅关闭不丢响应。',
+    quickstart_label: '快速开始',
+    quickstart_title: '快速上手',
+    quickstart_desc: '编译、配置、启动，即可在 AI 工具中使用图片分析能力。支持两种配置格式：标准 <code>mcp.json</code> 通用格式（Claude Code / Cursor / Trae / Codex 等）和 opencode 专用格式。两者的关键区别在于 <code>command</code> 类型（字符串 vs 数组）和字段名（<code>env</code> vs <code>environment</code>）。',
+    quickstart_build_label: '1. 编译',
+    quickstart_build_win_title: '# Windows',
+    quickstart_build_nix_title: '# Linux / macOS',
+    quickstart_build_build: '# 编译',
+    quickstart_build_test: '# 运行测试',
+    quickstart_build_lint: '# 代码检查',
+    quickstart_build_xcompile: '# 跨平台编译',
+    quickstart_build_version_note: '# 版本号从 VERSION 文件读取，也可通过 -Version 1.0.0 参数覆盖',
+    quickstart_build_ldflags_note: '# 通过 -ldflags 注入 version 和 buildTime',
+    quickstart_std_label: '2. 配置 mcp.json — 标准格式 <span style="font-weight:400;color:var(--text-secondary)">Claude Code / Cursor / Trae / Codex 等 AI 工具通用（参考项目根目录 <a href="../mcp.json.example" style="color:var(--accent)">mcp.json.example</a>）</span>',
+    quickstart_std_a_title: '// ---- 方案 A: Ollama（纯本地） ----',
+    quickstart_std_b_title: '// ---- 方案 B: vLLM（纯本地） ----',
+    quickstart_std_c_title: '// ---- 方案 C: 云端 API（阿里云 DashScope / OpenAI） ----',
+    quickstart_oc_label: '3. 配置 opencode — 专用格式 <span style="font-weight:400;color:var(--text-secondary)">仅 opencode 使用 <code>command</code> 数组 + <code>environment</code>，其他工具不兼容</span>',
+    quickstart_use_label: '4. 在 AI 工具中使用',
+    quickstart_use_how: '# 直接对话即可',
+    config_label: '配置参考',
+    config_title: '环境变量',
+    config_desc: '所有配置通过环境变量传入。标准格式用 <code>env</code> 字段，opencode 用 <code>environment</code> 字段。',
+    config_required: '必填',
+    config_optional: '可选',
+    config_cloud_required: '云端必填',
+    config_base_desc: 'VLM API 端点地址，需兼容 OpenAI chat/completions 格式。支持云端服务或本地 Ollama / vLLM。',
+    config_model_desc: '视觉语言模型名称，需支持图片输入。',
+    config_key_desc: 'API 认证密钥。本地服务（localhost / 127.0.0.1）可省略。',
+    config_timeout_desc: 'VLM API 请求超时秒数，默认 60。处理大图或网络不稳定时建议增大。',
+    config_log_desc: '日志级别：debug / info / warn / error，默认 warn。日志输出到 stderr，不影响 MCP 通信。',
+    config_compat_title: '兼容的 VLM 服务',
+    config_compat_dashscope: '阿里云 DashScope',
+    config_compat_dashscope_desc: 'qwen-vl-plus / qwen-vl-max，国内首选，延迟低。',
+    config_compat_ollama: 'Ollama 本地',
+    config_compat_ollama_desc: 'llava / minicpm-v 等，零成本，数据不出本机。',
+    config_compat_openai: 'OpenAI 兼容',
+    config_compat_openai_desc: '任何兼容 OpenAI API 的视觉模型服务均可接入。',
+    examples_label: '使用案例',
+    examples_title: '从零搭建本地图片分析',
+    examples_desc: '以下以 Ollama + Qwen 视觉模型为例，演示如何零成本、数据不出本机地运行 mcp_images。量化后仅需 5-8GB 显存。',
+    examples_case_a_title: '案例 A：Qwen2.5-VL 7B',
+    examples_case_a_desc: '量化后仅需约 5GB 显存，运行速度极快。中英文 OCR 优秀，识别代码和日志的准确度在轻量级模型中无可匹敌。',
+    examples_case_b_title: '案例 B：Qwen3-VL 2B',
+    examples_case_b_desc: '量化后仅需约 3GB 显存，极致轻量。适合 UI 布局分析、简单图片描述等对速度要求更高的场景。',
+    examples_scenarios_title: '典型使用场景',
+    examples_scene1_title: 'GPU 监控截图分析',
+    examples_scene1_desc: '直接截取任务管理器或 GPU 监控面板，AI 自动分析各指标使用率、瓶颈诊断，快速定位性能问题。',
+    examples_scene2_title: '报错日志排查',
+    examples_scene2_desc: '终端或 IDE 报错截图一键分析，识别错误类型、堆栈关键信息，给出修复建议。IDE 内直接使用剪贴板工具，无需保存文件。',
+    examples_scene3_title: 'UI 设计稿评审',
+    examples_scene3_desc: '将 UI 设计稿截图交给 AI，自动分析布局结构、间距一致性、色彩搭配，输出可操作的改进建议。',
+    examples_scene4_title: '文档 / 白板 OCR',
+    examples_scene4_desc: '拍摄或截图文档、白板内容，AI 提取文字信息并结构化输出，支持中英文混合识别。',
+    examples_scene5_title: '代码截图提取',
+    examples_scene5_desc: '从演示视频、会议共享屏幕或 PDF 中截取代码片段，AI 提取并还原为可粘贴的代码文本。',
+    examples_scene6_title: '数据可视化解读',
+    examples_scene6_desc: '将图表、仪表盘截图交给 AI，自动提取数据趋势、极值、异常点，生成文字总结报告。',
+    examples_step1: 'Step 1 — 安装 Ollama',
+    examples_step1_macos: '# macOS / Linux',
+    examples_step1_win: '# Windows：从 https://ollama.com/download 下载安装包',
+    examples_step2: 'Step 2 — 拉取视觉模型',
+    examples_step2_precise: '# 案例 A：高精度',
+    examples_step2_light: '# 案例 B：轻量快速',
+    examples_step3: 'Step 3 — 配置 mcp.json',
+    examples_step3_note: '# 本地部署无需 VLM_API_KEY，省略即可',
+    examples_step4: 'Step 4 — 在 AI 工具中对话',
+    examples_step4_ask: '# 截图后直接问',
+    examples_step4_switch: '# 切换模型只需修改 VLM_MODEL',
+    tech_label: '技术细节',
+    tech_title: '为什么选择 mcp_images',
+    tech_pipeline_title: '图片处理管线',
+    tech_pipeline_1: '多格式解码：JPEG / PNG / BMP / TIFF / WebP',
+    tech_pipeline_2: '自动 EXIF 方向校正',
+    tech_pipeline_3: '色彩空间统一转换（draw.Draw 批量处理）',
+    tech_pipeline_4: '智能缩放：超过 2048px 或 5MB 自动 Lanczos 降采样',
+    tech_pipeline_5: '流式 Base64 编码，减少内存峰值',
+    tech_safety_title: '安全与可靠性',
+    tech_safety_1: '路径遍历防护，禁止 .. 和相对路径',
+    tech_safety_2: '文件大小限制（20MB）防止 OOM',
+    tech_safety_3: 'VLM 请求指数退避重试（最多 2 次）',
+    tech_safety_4: '并发安全：writeMu 保证响应有序',
+    tech_safety_5: '优雅关闭：5s 超时等待进行中请求完成',
+    footer_line1: 'mcp_images — 开源 MCP 图片分析服务器 · 使用 Go 构建',
+    footer_line2: '详细开发指南请参阅项目根目录 <a href="../AGENTS.md">AGENTS.md</a> · <a href="https://github.com/LiveBigOrange/mcp_images" target="_blank">GitHub</a>',
+  },
+  en: {
+    nav_features: 'Features',
+    nav_arch: 'Architecture',
+    nav_quickstart: 'Quick Start',
+    nav_examples: 'Examples',
+    nav_config: 'Config',
+    hero_badge: 'MCP Protocol · Open Source',
+    hero_title: 'Let AI See<br><span class="gradient">Your Screenshots</span>',
+    hero_desc: 'mcp_images is a lightweight MCP image analysis server. It sends local images, clipboard screenshots, or Base64 data to a VLM API and returns precise structured analysis results.',
+    hero_cta: 'Get Started →',
+    features_label: 'Core Features',
+    features_title: 'Three Ways, One Goal',
+    features_desc: 'Whether the image comes from a file, clipboard, or Base64 encoding, mcp_images handles it efficiently and forwards it to VLM for analysis.',
+    features_file_desc: 'Pass a local image absolute path — auto decode, process, and analyze. Supports JPEG, PNG, BMP, TIFF, WebP.',
+    features_clip_desc: 'Read screenshots directly from the system clipboard without saving files. Windows uses Win32 API, Linux uses xclip/wl-paste, macOS uses osascript. WSL auto-detects and accesses Windows clipboard via PowerShell.',
+    features_b64_desc: 'Accept Base64-encoded image data. Ideal when your IDE passes embedded images as Base64 in conversations.',
+    arch_label: 'Architecture',
+    arch_title: 'Lightweight, Efficient, Extensible',
+    arch_desc: 'Single Go binary + stdio JSON-RPC. Zero-dependency runtime, seamless integration with any MCP-compatible AI tool.',
+    arch_ai_tool: 'AI Tool',
+    arch_image_proc: 'Image Processing',
+    arch_result: 'Structured Result',
+    arch_perf_title: 'High-Performance Processing',
+    arch_perf_desc: 'Batch color conversion with draw.Draw + direct Pix access — 5-10× faster than per-pixel At/Set. Lanczos downscaling, automatic EXIF rotation.',
+    arch_retry_title: 'Smart Retry Mechanism',
+    arch_retry_desc: 'Exponential backoff retry (max 2 attempts). Auto-detects retriable errors: timeouts, 429, 5xx. Improves service reliability.',
+    arch_conc_title: 'Concurrency Safe',
+    arch_conc_desc: 'writeMu mutex ensures ordered stdout output. goroutine + WaitGroup manages request lifecycle. Graceful shutdown without dropping responses.',
+    quickstart_label: 'Quick Start',
+    quickstart_title: 'Get Started',
+    quickstart_desc: 'Build, configure, and start using image analysis in your AI tools. Two config formats: standard <code>mcp.json</code> (Claude Code / Cursor / Trae / Codex) and opencode-specific. Key differences: <code>command</code> type (string vs array) and field name (<code>env</code> vs <code>environment</code>).',
+    quickstart_build_label: '1. Build',
+    quickstart_build_win_title: '# Windows',
+    quickstart_build_nix_title: '# Linux / macOS',
+    quickstart_build_build: '# Build',
+    quickstart_build_test: '# Run tests',
+    quickstart_build_lint: '# Lint',
+    quickstart_build_xcompile: '# Cross-compile',
+    quickstart_build_version_note: '# Version read from VERSION file, override with -Version 1.0.0',
+    quickstart_build_ldflags_note: '# version and buildTime injected via -ldflags',
+    quickstart_std_label: '2. Configure mcp.json — Standard <span style="font-weight:400;color:var(--text-secondary)">Works with Claude Code / Cursor / Trae / Codex etc. (see <a href="../mcp.json.example" style="color:var(--accent)">mcp.json.example</a>)</span>',
+    quickstart_std_a_title: '// ---- Option A: Ollama (local only) ----',
+    quickstart_std_b_title: '// ---- Option B: vLLM (local only) ----',
+    quickstart_std_c_title: '// ---- Option C: Cloud API (DashScope / OpenAI) ----',
+    quickstart_oc_label: '3. Configure opencode — Specific Format <span style="font-weight:400;color:var(--text-secondary)">Only opencode uses <code>command</code> array + <code>environment</code>; incompatible with other tools</span>',
+    quickstart_use_label: '4. Use in AI Tools',
+    quickstart_use_how: '# Just ask in chat',
+    config_label: 'Config Reference',
+    config_title: 'Environment Variables',
+    config_desc: 'All configuration is passed via environment variables. Use <code>env</code> in standard format, <code>environment</code> in opencode.',
+    config_required: 'Required',
+    config_optional: 'Optional',
+    config_cloud_required: 'Required for Cloud',
+    config_base_desc: 'VLM API endpoint, must be compatible with OpenAI chat/completions format. Supports cloud services or local Ollama / vLLM.',
+    config_model_desc: 'Vision language model name — must support image input.',
+    config_key_desc: 'API authentication key. Can be omitted for local services (localhost / 127.0.0.1).',
+    config_timeout_desc: 'VLM API request timeout in seconds. Default: 60. Increase for large images or unstable networks.',
+    config_log_desc: 'Log level: debug / info / warn / error. Default: warn. Logs go to stderr, does not affect MCP communication.',
+    config_compat_title: 'Compatible VLM Services',
+    config_compat_dashscope: 'Alibaba Cloud DashScope',
+    config_compat_dashscope_desc: 'qwen-vl-plus / qwen-vl-max, preferred in China, low latency.',
+    config_compat_ollama: 'Ollama Local',
+    config_compat_ollama_desc: 'llava / minicpm-v etc. Zero cost, data stays on your machine.',
+    config_compat_openai: 'OpenAI Compatible',
+    config_compat_openai_desc: 'Any OpenAI API-compatible vision model service can be used.',
+    examples_label: 'Examples',
+    examples_title: 'Build Local Image Analysis from Scratch',
+    examples_desc: 'Using Ollama + Qwen vision models as an example — zero cost, data stays local. Only 5-8GB VRAM needed after quantization.',
+    examples_case_a_title: 'Case A: Qwen2.5-VL 7B',
+    examples_case_a_desc: '~5GB VRAM after quantization, very fast. Excellent Chinese/English OCR, unmatched accuracy for code and log recognition among lightweight models.',
+    examples_case_b_title: 'Case B: Qwen3-VL 2B',
+    examples_case_b_desc: '~3GB VRAM after quantization, ultra-lightweight. Perfect for UI layout analysis, simple image descriptions, and speed-critical scenarios.',
+    examples_scenarios_title: 'Typical Use Cases',
+    examples_scene1_title: 'GPU Monitor Analysis',
+    examples_scene1_desc: 'Screenshot your task manager or GPU monitor. AI analyzes metrics, utilization, bottlenecks — quickly locate performance issues.',
+    examples_scene2_title: 'Error Log Diagnosis',
+    examples_scene2_desc: 'One-click analysis of terminal or IDE error screenshots. Identifies error type, key stack trace info, and suggests fixes. Use clipboard tool directly in IDE, no file saving needed.',
+    examples_scene3_title: 'UI Design Review',
+    examples_scene3_desc: 'Feed UI screenshots to AI. Automatically analyzes layout structure, spacing consistency, color schemes — outputs actionable improvement suggestions.',
+    examples_scene4_title: 'Document / Whiteboard OCR',
+    examples_scene4_desc: 'Photograph or screenshot documents and whiteboards. AI extracts text and outputs structured results. Supports mixed Chinese/English recognition.',
+    examples_scene5_title: 'Code Screenshot Extraction',
+    examples_scene5_desc: 'Extract code from demo videos, shared screens, or PDFs. AI restores copy-paste-ready code text.',
+    examples_scene6_title: 'Data Viz Interpretation',
+    examples_scene6_desc: 'Feed chart or dashboard screenshots to AI. Automatically extracts trends, extremes, anomalies — generates text summary reports.',
+    examples_step1: 'Step 1 — Install Ollama',
+    examples_step1_macos: '# macOS / Linux',
+    examples_step1_win: '# Windows: download from https://ollama.com/download',
+    examples_step2: 'Step 2 — Pull Vision Model',
+    examples_step2_precise: '# Case A: High precision',
+    examples_step2_light: '# Case B: Lightweight & fast',
+    examples_step3: 'Step 3 — Configure mcp.json',
+    examples_step3_note: '# VLM_API_KEY not needed for local deployment',
+    examples_step4: 'Step 4 — Chat in AI Tool',
+    examples_step4_ask: '# Ask after screenshot',
+    examples_step4_switch: '# Switch models by changing VLM_MODEL',
+    tech_label: 'Technical Details',
+    tech_title: 'Why mcp_images',
+    tech_pipeline_title: 'Image Processing Pipeline',
+    tech_pipeline_1: 'Multi-format decode: JPEG / PNG / BMP / TIFF / WebP',
+    tech_pipeline_2: 'Automatic EXIF orientation correction',
+    tech_pipeline_3: 'Unified color space conversion (draw.Draw batch)',
+    tech_pipeline_4: 'Smart resize: auto Lanczos downscale beyond 2048px or 5MB',
+    tech_pipeline_5: 'Streaming Base64 encoding reduces memory peaks',
+    tech_safety_title: 'Security & Reliability',
+    tech_safety_1: 'Path traversal protection — blocks .. and relative paths',
+    tech_safety_2: 'File size limit (20MB) prevents OOM',
+    tech_safety_3: 'Exponential backoff retry (max 2 attempts)',
+    tech_safety_4: 'Concurrency safe: writeMu ensures ordered responses',
+    tech_safety_5: 'Graceful shutdown: 5s timeout for in-flight requests',
+    footer_line1: 'mcp_images — Open Source MCP Image Analysis Server · Built with Go',
+    footer_line2: 'See <a href="../AGENTS.md">AGENTS.md</a> for detailed development guide · <a href="https://github.com/LiveBigOrange/mcp_images" target="_blank">GitHub</a>',
+  }
+};
+
+let currentLang = localStorage.getItem('mcp_lang') || 'zh';
+
+function applyLang(lang) {
+  const t = I18N[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.documentElement.lang = lang;
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'EN' : '中文';
+  localStorage.setItem('mcp_lang', lang);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  applyLang(currentLang);
+}
+
+applyLang(currentLang);
+</script>
+
+</body>
+</html>
