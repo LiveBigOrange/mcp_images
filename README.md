@@ -6,19 +6,27 @@
 
 ## 快速开始
 
+### 方式一：下载预编译二进制（推荐）
+
+从 [Releases](https://github.com/LiveBigOrange/mcp_images/releases/latest) 下载对应平台的二进制文件。
+
+### 方式二：从源码编译
+
 ```bash
-# 编译
-make build
+# Linux / macOS
+make build                # 编译当前平台
+make build-all            # 跨平台编译（Windows/Linux/macOS）
 
-# 配置环境变量（以 Ollama 为例）
-export VLM_API_BASE=http://localhost:11434/v1/chat/completions
-export VLM_MODEL=qwen2.5vl:7b
-
-# 启动
-./bin/mcp_images
+# Windows
+./build.ps1               # 编译当前平台
+./build.ps1 -Action build-all  # 跨平台编译
 ```
 
-在 AI 工具的 `mcp.json` 中添加：
+编译产物输出到 `bin/` 目录。
+
+### 配置
+
+在 AI 工具的 `mcp.json` 中添加（以 Ollama 为例）：
 
 ```json
 {
@@ -33,6 +41,8 @@ export VLM_MODEL=qwen2.5vl:7b
   }
 }
 ```
+
+更多配置示例（vLLM / DashScope / OpenAI / opencode）见 [完整文档](https://livebigorange.github.io/mcp_images/)。
 
 ## 环境变量
 
@@ -52,18 +62,22 @@ export VLM_MODEL=qwen2.5vl:7b
 
 ## 文档
 
-完整文档（含多场景配置示例、使用案例）：[docs/index.html](./docs/index.html)
+完整文档（含多场景配置示例、使用案例）：[livebigorange.github.io/mcp_images](https://livebigorange.github.io/mcp_images/)
 
 ## 构建
 
 ```bash
+# Linux / macOS
 make build       # 编译当前平台
 make build-all   # 跨平台编译
 make test        # 运行测试
 make lint        # 代码检查
-```
 
-Windows 用户使用 `./build.ps1`。
+# Windows
+./build.ps1               # 编译当前平台
+./build.ps1 -Action test  # 运行测试
+./build.ps1 -Action lint  # 代码检查
+```
 
 ## 架构
 
