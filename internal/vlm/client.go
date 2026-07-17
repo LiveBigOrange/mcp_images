@@ -1,13 +1,12 @@
 package vlm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"bytes"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"mcp_images/internal/config"
@@ -24,6 +23,17 @@ const userTextPrompt = "请分析这张图片。"
 
 const maxRetries = 2
 const retryBaseDelay = 1 * time.Second
+const maxResponseBodySize = 10 * 1024 * 1024
+
+type VLMError struct {
+	StatusCode int
+	Message    string
+	Retryable  bool
+}
+
+func (e *VLMError) Error() string {
+	return e.Message
+}
 
 type VLMContent struct {
 	Type     string    `json:"type"`
@@ -133,12 +143,12 @@ func (c *Client) doRequest(ctx context.Context, imageDataURI string) (string, er
 
 	body, err := json.Marshal(req)
 	if err != nil {
-		return "", fmt.Errorf("[VLM错误] 请求构造失败：%v", err)
+		return "", &VLMError{Message: fmt.Sprintf("[VLM错误] 请求构造失败：%v", err)}
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.cfg.APIBase, bytes.NewReader(body))
 	if err != nil {
-		return "", fmt.Errorf("[VLM错误] 请求创建失败：%v", err)
+		return "", &VLMError{Message: fmt.Sprintf("[VLM错误] 请求创建失败：%v", err)}
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
@@ -150,16 +160,16 @@ func (c *Client) doRequest(ctx context.Context, imageDataURI string) (string, er
 
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			return "", fmt.Errorf("[VLM错误] VLM 服务响应超时。可能是图片过于复杂或服务负载过高，可稍后重试。")
+		if ctx.Err() != nil {
+			return "", &VLMError{Message: "[VLM错误] VLM 服务响应超时。可能是图片过于复杂或服务负载过高，可稍后重试。", Retryable: true}
 		}
-		return "", fmt.Errorf("[VLM错误] 无法连接到 VLM 服务（%v）。请检查 VLM_API_BASE 配置和网络连接。", err)
+		return "", &VLMError{Message: fmt.Sprintf("[VLM错误] 无法连接到 VLM 服务（%v）。请检查 VLM_API_BASE 配置和网络连接。", err), Retryable: true}
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBodySize))
 	if err != nil {
-		return "", fmt.Errorf("[VLM错误] 读取响应失败：%v", err)
+		return "", &VLMError{Message: fmt.Sprintf("[VLM错误] 读取响应失败：%v", err)}
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -178,18 +188,8 @@ func isRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	msg := err.Error()
-	if strings.Contains(msg, "超时") {
-		return true
-	}
-	if strings.Contains(msg, "429") {
-		return true
-	}
-	if strings.Contains(msg, "500") || strings.Contains(msg, "502") || strings.Contains(msg, "503") {
-		return true
-	}
-	if strings.Contains(msg, "无法连接") {
-		return true
+	if vlmErr, ok := err.(*VLMError); ok {
+		return vlmErr.Retryable
 	}
 	return false
 }
@@ -211,19 +211,19 @@ func ParseResponse(body []byte) (string, error) {
 
 func MapError(err error, statusCode int) error {
 	if err != nil {
-		return fmt.Errorf("[VLM错误] 无法连接到 VLM 服务（%v）。请检查 VLM_API_BASE 配置和网络连接。", err)
+		return &VLMError{Message: fmt.Sprintf("[VLM错误] 无法连接到 VLM 服务（%v）。请检查 VLM_API_BASE 配置和网络连接。", err), Retryable: true}
 	}
 	switch statusCode {
 	case 401, 403:
-		return fmt.Errorf("[VLM错误] VLM 服务认证失败（HTTP %d）。请检查 VLM_API_KEY 配置是否正确。", statusCode)
+		return &VLMError{StatusCode: statusCode, Message: fmt.Sprintf("[VLM错误] VLM 服务认证失败（HTTP %d）。请检查 VLM_API_KEY 配置是否正确。", statusCode)}
 	case 404:
-		return fmt.Errorf("[VLM错误] VLM 模型不存在（HTTP 404）。请检查 VLM_MODEL 配置是否正确。")
+		return &VLMError{StatusCode: statusCode, Message: "[VLM错误] VLM 模型不存在（HTTP 404）。请检查 VLM_MODEL 配置是否正确。"}
 	case 429:
-		return fmt.Errorf("[VLM错误] VLM 服务请求频率超限（HTTP 429）。请稍后重试。")
+		return &VLMError{StatusCode: statusCode, Message: "[VLM错误] VLM 服务请求频率超限（HTTP 429）。请稍后重试。", Retryable: true}
 	default:
 		if statusCode >= 500 {
-			return fmt.Errorf("[VLM错误] VLM 服务内部错误（HTTP %d）。请稍后重试。", statusCode)
+			return &VLMError{StatusCode: statusCode, Message: fmt.Sprintf("[VLM错误] VLM 服务内部错误（HTTP %d）。请稍后重试。", statusCode), Retryable: true}
 		}
-		return fmt.Errorf("[VLM错误] VLM 服务返回未知错误（HTTP %d）。", statusCode)
+		return &VLMError{StatusCode: statusCode, Message: fmt.Sprintf("[VLM错误] VLM 服务返回未知错误（HTTP %d）。", statusCode)}
 	}
 }

@@ -60,6 +60,9 @@ func parseLevel(level string) Level {
 }
 
 func (l *StderrLogger) log(level Level, msg string, fields ...Field) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	if level < l.level {
 		return
 	}
@@ -82,9 +85,7 @@ func (l *StderrLogger) log(level Level, msg string, fields ...Field) {
 		line += fmt.Sprintf(" %s=%v", f.Key, f.Value)
 	}
 
-	l.mu.Lock()
 	fmt.Fprintln(l.writer, line)
-	l.mu.Unlock()
 }
 
 func (l *StderrLogger) Debug(msg string, fields ...Field) {
@@ -103,12 +104,8 @@ func (l *StderrLogger) Error(msg string, fields ...Field) {
 	l.log(LevelError, msg, fields...)
 }
 
-func MaskAPIKey(key string) string {
-	if key == "" {
-		return ""
-	}
-	if len(key) <= 7 {
-		return "****"
-	}
-	return key[:3] + "****" + key[len(key)-4:]
+func (l *StderrLogger) SetLevel(level string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.level = parseLevel(level)
 }

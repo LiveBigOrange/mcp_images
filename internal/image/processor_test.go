@@ -1,10 +1,10 @@
 package image
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/jpeg"
-	"os"
 	"testing"
 )
 
@@ -78,7 +78,7 @@ func TestDetectFormat(t *testing.T) {
 		{[]byte{0x89, 0x50, 0x4E, 0x47}, "png"},
 		{[]byte{0x42, 0x4D, 0x00, 0x00}, "bmp"},
 		{[]byte{0x49, 0x49, 0x2A, 0x00}, "tiff"},
-		{[]byte{0x52, 0x49, 0x46, 0x46}, "webp"},
+		{[]byte{0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50}, "webp"},
 		{[]byte{0x00, 0x00, 0x00, 0x00}, ""},
 	}
 	for _, tt := range tests {
@@ -100,11 +100,9 @@ func createTestImage(w, h int) *image.RGBA {
 }
 
 func encodeTestJPEG(img image.Image) []byte {
-
-	f, _ := os.CreateTemp("", "test_*.jpg")
-	defer os.Remove(f.Name())
-	jpeg.Encode(f, img, &jpeg.Options{Quality: 85})
-	f.Close()
-	data, _ := os.ReadFile(f.Name())
-	return data
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 85}); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }

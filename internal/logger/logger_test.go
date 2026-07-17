@@ -6,23 +6,6 @@ import (
 	"testing"
 )
 
-func TestMaskAPIKey(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"sk-1234567890abcdef", "sk-****cdef"},
-		{"short", "****"},
-		{"", ""},
-	}
-	for _, tt := range tests {
-		got := MaskAPIKey(tt.input)
-		if got != tt.expected {
-			t.Errorf("MaskAPIKey(%q) = %q, want %q", tt.input, got, tt.expected)
-		}
-	}
-}
-
 func TestLogLevel(t *testing.T) {
 	var buf bytes.Buffer
 	lg := &StderrLogger{level: LevelWarn, writer: &buf}

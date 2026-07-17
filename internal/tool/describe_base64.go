@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	imgproc "mcp_images/internal/image"
-	"mcp_images/internal/logger"
+
 	"mcp_images/internal/vlm"
 )
 
@@ -25,14 +25,12 @@ var validFormats = map[string]string{
 type DescribeBase64Image struct {
 	vlmClient *vlm.Client
 	processor *imgproc.Processor
-	logger    logger.Logger
 }
 
-func NewDescribeBase64Image(vlmClient *vlm.Client, processor *imgproc.Processor, lg logger.Logger) *DescribeBase64Image {
+func NewDescribeBase64Image(vlmClient *vlm.Client, processor *imgproc.Processor) *DescribeBase64Image {
 	return &DescribeBase64Image{
 		vlmClient: vlmClient,
 		processor: processor,
-		logger:    lg,
 	}
 }
 

@@ -1,15 +1,14 @@
 package config
 
 import (
-	"os"
 	"testing"
 )
 
 func TestLoad(t *testing.T) {
-	os.Setenv("VLM_API_BASE", " https://api.example.com/v1/chat/completions ")
-	os.Setenv("VLM_API_KEY", " sk-test-key ")
-	os.Setenv("VLM_MODEL", " qwen2.5-v:2b ")
-	os.Setenv("VLM_LOG_LEVEL", " debug ")
+	t.Setenv("VLM_API_BASE", " https://api.example.com/v1/chat/completions ")
+	t.Setenv("VLM_API_KEY", " sk-test-key ")
+	t.Setenv("VLM_MODEL", " qwen2.5-v:2b ")
+	t.Setenv("VLM_LOG_LEVEL", " debug ")
 
 	cfg, err := Load()
 	if err != nil {

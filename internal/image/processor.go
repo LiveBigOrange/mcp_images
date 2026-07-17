@@ -2,6 +2,7 @@ package image
 
 import (
 	"fmt"
+	"runtime"
 )
 
 type Processor struct{}
@@ -13,7 +14,9 @@ func NewProcessor() *Processor {
 func (p *Processor) Process(data []byte, formatHint string) (dataURI string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("[图片处理失败] 内存不足或处理异常：%v", r)
+			buf := make([]byte, 4096)
+			n := runtime.Stack(buf, false)
+			err = fmt.Errorf("[图片处理失败] 内存不足或处理异常：%v\n%s", r, buf[:n])
 		}
 	}()
 

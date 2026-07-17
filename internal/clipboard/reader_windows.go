@@ -3,13 +3,12 @@
 package clipboard
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
 	"image"
-
 	"image/png"
-	"io"
 	"syscall"
 	"unsafe"
 
@@ -26,13 +25,24 @@ var (
 	procGlobalLock                 = kernel32.NewProc("GlobalLock")
 	procGlobalUnlock               = kernel32.NewProc("GlobalUnlock")
 	procGlobalSize                 = kernel32.NewProc("GlobalSize")
-	procCreateStreamOnHGlobal      = syscall.NewLazyDLL("ole32.dll").NewProc("CreateStreamOnHGlobal")
+	procRegisterClipboardFormat    = user32.NewProc("RegisterClipboardFormatW")
 )
 
+var cfPNG uintptr
+
+func init() {
+	pngName, _ := syscall.UTF16PtrFromString("PNG")
+	ret, _, _ := procRegisterClipboardFormat.Call(uintptr(unsafe.Pointer(pngName)))
+	if ret != 0 {
+		cfPNG = ret
+	}
+}
+
 const (
-	cfPNG   = 0x000F
 	cfDIB   = 8
 	cfDIBv5 = 17
+
+	maxClipboardSize = 50 * 1024 * 1024
 )
 
 type windowsReader struct {
@@ -55,6 +65,10 @@ func (r *windowsReader) ReadImage(ctx context.Context) ([]byte, error) {
 }
 
 func (r *windowsReader) readPNG() ([]byte, error) {
+	if cfPNG == 0 {
+		return nil, fmt.Errorf("PNG 剪贴板格式未注册")
+	}
+
 	ret, _, _ := procOpenClipboard.Call(0)
 	if ret == 0 {
 		return nil, fmt.Errorf("OpenClipboard 失败")
@@ -74,6 +88,9 @@ func (r *windowsReader) readPNG() ([]byte, error) {
 	size, _, _ := procGlobalSize.Call(hData)
 	if size == 0 {
 		return nil, fmt.Errorf("GlobalSize 返回 0")
+	}
+	if size > maxClipboardSize {
+		return nil, fmt.Errorf("剪贴板数据过大（%d 字节），超过 %d MB 上限", size, maxClipboardSize/(1024*1024))
 	}
 
 	ptr, _, _ := procGlobalLock.Call(hData)
@@ -114,6 +131,9 @@ func (r *windowsReader) readDIB() ([]byte, error) {
 	size, _, _ := procGlobalSize.Call(hData)
 	if size == 0 {
 		return nil, fmt.Errorf("GlobalSize 返回 0")
+	}
+	if size > maxClipboardSize {
+		return nil, fmt.Errorf("剪贴板数据过大（%d 字节），超过 %d MB 上限", size, maxClipboardSize/(1024*1024))
 	}
 
 	ptr, _, _ := procGlobalLock.Call(hData)
@@ -166,13 +186,6 @@ func (r *windowsReader) dibToPNG(dibData []byte) ([]byte, error) {
 	}
 
 	pixelOffset := hdr.Size
-	if hdr.BitCount <= 8 {
-		paletteSize := uint32(1) << hdr.BitCount
-		if hdr.ClrUsed > 0 && hdr.ClrUsed < paletteSize {
-			paletteSize = hdr.ClrUsed
-		}
-		pixelOffset += paletteSize * 4
-	}
 
 	img := image.NewRGBA(image.Rect(0, 0, int(hdr.Width), int(absHeight)))
 	pix := img.Pix
@@ -222,25 +235,9 @@ func (r *windowsReader) dibToPNG(dibData []byte) ([]byte, error) {
 		}
 	}
 
-	var pngData []byte
-	pr, pw := io.Pipe()
-	go func() {
-		defer pw.Close()
-		png.Encode(pw, img)
-	}()
-	go func() {
-		defer pr.Close()
-		chunk := make([]byte, 4096)
-		for {
-			n, err := pr.Read(chunk)
-			if n > 0 {
-				pngData = append(pngData, chunk[:n]...)
-			}
-			if err != nil {
-				break
-			}
-		}
-	}()
-
-	return pngData, nil
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return nil, fmt.Errorf("PNG 编码失败：%v", err)
+	}
+	return buf.Bytes(), nil
 }

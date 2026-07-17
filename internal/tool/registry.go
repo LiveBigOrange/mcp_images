@@ -56,8 +56,15 @@ func SanitizeArgs(args map[string]interface{}) map[string]interface{} {
 
 func ValidateRequired(args map[string]interface{}, required []string) error {
 	for _, key := range required {
-		if _, ok := args[key]; !ok {
+		val, ok := args[key]
+		if !ok {
 			return fmt.Errorf("[参数错误] 必填参数 %s 缺失。", key)
+		}
+		if s, isStr := val.(string); isStr && s == "" {
+			return fmt.Errorf("[参数错误] 必填参数 %s 不能为空。", key)
+		}
+		if val == nil {
+			return fmt.Errorf("[参数错误] 必填参数 %s 不能为 nil。", key)
 		}
 	}
 	return nil

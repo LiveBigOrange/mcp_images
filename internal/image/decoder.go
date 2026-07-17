@@ -21,13 +21,23 @@ func Decode(data []byte, formatHint string) (img image.Image, format string, err
 	}
 
 	img, format, err = image.Decode(bytes.NewReader(data))
-	if err != nil {
-		if formatHint != "" {
-			return nil, "", fmt.Errorf("[图片解码失败] 无法解码图片（提示格式：%s，自动检测也失败）：%v", formatHint, err)
-		}
-		return nil, "", fmt.Errorf("[图片解码失败] 无法识别图片格式或图片已损坏：%v", err)
+	if err == nil {
+		return img, format, nil
 	}
-	return img, format, nil
+
+	if formatHint == "" {
+		if detected := DetectFormat(data); detected != "" {
+			img, err2 := decodeByFormat(data, detected)
+			if err2 == nil {
+				return img, detected, nil
+			}
+		}
+	}
+
+	if formatHint != "" {
+		return nil, "", fmt.Errorf("[图片解码失败] 无法解码图片（提示格式：%s，自动检测也失败）：%v", formatHint, err)
+	}
+	return nil, "", fmt.Errorf("[图片解码失败] 无法识别图片格式或图片已损坏：%v", err)
 }
 
 func decodeByFormat(data []byte, format string) (image.Image, error) {
@@ -61,7 +71,7 @@ func DetectFormat(data []byte) string {
 		return "bmp"
 	case bytes.HasPrefix(data, []byte{0x49, 0x49, 0x2A, 0x00}) || bytes.HasPrefix(data, []byte{0x4D, 0x4D, 0x00, 0x2A}):
 		return "tiff"
-	case bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}):
+	case len(data) >= 12 && bytes.HasPrefix(data, []byte{0x52, 0x49, 0x46, 0x46}) && bytes.Equal(data[8:12], []byte{0x57, 0x45, 0x42, 0x50}):
 		return "webp"
 	}
 	return ""

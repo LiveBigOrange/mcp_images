@@ -1,7 +1,9 @@
 package image
 
 import (
+	"fmt"
 	"image"
+	"strconv"
 
 	"github.com/disintegration/imaging"
 	exif "github.com/dsoprea/go-exif/v3"
@@ -61,13 +63,12 @@ func getEXIFOrientation(data []byte) int {
 }
 
 func parseOrientationInt(s string, v *int) (int, error) {
-	n := 0
-	for _, c := range s {
-		if c >= '0' && c <= '9' {
-			n = n*10 + int(c-'0')
-		} else {
-			break
-		}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	if n < 1 || n > 8 {
+		return 0, fmt.Errorf("invalid orientation value: %d", n)
 	}
 	*v = n
 	return n, nil

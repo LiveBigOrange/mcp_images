@@ -5,7 +5,7 @@ import (
 
 	"mcp_images/internal/clipboard"
 	imgproc "mcp_images/internal/image"
-	"mcp_images/internal/logger"
+
 	"mcp_images/internal/vlm"
 )
 
@@ -13,15 +13,13 @@ type DescribeClipboardImage struct {
 	vlmClient *vlm.Client
 	processor *imgproc.Processor
 	clipboard clipboard.ClipboardReader
-	logger    logger.Logger
 }
 
-func NewDescribeClipboardImage(vlmClient *vlm.Client, processor *imgproc.Processor, clipReader clipboard.ClipboardReader, lg logger.Logger) *DescribeClipboardImage {
+func NewDescribeClipboardImage(vlmClient *vlm.Client, processor *imgproc.Processor, clipReader clipboard.ClipboardReader) *DescribeClipboardImage {
 	return &DescribeClipboardImage{
 		vlmClient: vlmClient,
 		processor: processor,
 		clipboard: clipReader,
-		logger:    lg,
 	}
 }
 
@@ -37,6 +35,7 @@ func (t *DescribeClipboardImage) InputSchema() map[string]interface{} {
 	return map[string]interface{}{
 		"type":       "object",
 		"properties": map[string]interface{}{},
+		"required":   []string{},
 	}
 }
 

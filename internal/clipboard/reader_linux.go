@@ -68,8 +68,9 @@ func (r *linuxReader) readWSL(ctx context.Context) ([]byte, error) {
 	}
 
 	wslPath := convertWindowsPathToWSL(output)
+	defer os.Remove(wslPath)
+
 	data, err := os.ReadFile(wslPath)
-	os.Remove(wslPath)
 	if err != nil {
 		return nil, fmt.Errorf("[剪贴板错误] 读取截屏文件失败：%v", err)
 	}

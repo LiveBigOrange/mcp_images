@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -34,8 +35,9 @@ type JSONRPCResponse struct {
 }
 
 type RPCError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 type ToolCallParams struct {
@@ -53,14 +55,18 @@ type ContentBlock struct {
 	Text string `json:"text"`
 }
 
+const maxConcurrentRequests = 16
+
 type MCPServer struct {
-	cfg        *config.Config
-	logger     logger.Logger
-	registry   *tool.Registry
-	wg         sync.WaitGroup
-	shutdownMu sync.Mutex
-	writeMu    sync.Mutex
-	running    bool
+	cfg      *config.Config
+	logger   logger.Logger
+	registry *tool.Registry
+	wg       sync.WaitGroup
+
+	writeMu     sync.Mutex
+	sem         chan struct{}
+	initialized bool
+	initMu      sync.Mutex
 }
 
 func NewServer(cfg *config.Config, lg logger.Logger) *MCPServer {
@@ -69,14 +75,15 @@ func NewServer(cfg *config.Config, lg logger.Logger) *MCPServer {
 	clipReader := clipboard.NewReader(lg)
 
 	registry := tool.NewRegistry()
-	registry.Register(tool.NewDescribeImageFile(vlmClient, processor, lg))
-	registry.Register(tool.NewDescribeClipboardImage(vlmClient, processor, clipReader, lg))
-	registry.Register(tool.NewDescribeBase64Image(vlmClient, processor, lg))
+	registry.Register(tool.NewDescribeImageFile(vlmClient, processor))
+	registry.Register(tool.NewDescribeClipboardImage(vlmClient, processor, clipReader))
+	registry.Register(tool.NewDescribeBase64Image(vlmClient, processor))
 
 	return &MCPServer{
 		cfg:      cfg,
 		logger:   lg,
 		registry: registry,
+		sem:      make(chan struct{}, maxConcurrentRequests),
 	}
 }
 
@@ -96,7 +103,6 @@ func (s *MCPServer) Run(ctx context.Context) error {
 		}
 	}()
 
-	s.running = true
 	decoder := json.NewDecoder(os.Stdin)
 
 	for {
@@ -118,48 +124,157 @@ func (s *MCPServer) Run(ctx context.Context) error {
 		default:
 		}
 
-		var req JSONRPCRequest
-		if err := decoder.Decode(&req); err != nil {
+		var raw json.RawMessage
+		if err := decoder.Decode(&raw); err != nil {
 			if err == io.EOF {
 				s.logger.Info("stdin 已关闭，5 秒后退出")
 				cancel()
 				continue
 			}
-			s.logger.Debug("JSON 解析失败", logger.Field{Key: "error", Value: err.Error()})
+			s.logger.Debug("JSON 解析失败，重建 decoder", logger.Field{Key: "error", Value: err.Error()})
 			s.writeResponse(JSONRPCResponse{
 				JSONRPC: "2.0",
 				ID:      nil,
 				Error:   &RPCError{Code: -32700, Message: "Parse error"},
 			})
+			decoder = json.NewDecoder(os.Stdin)
 			continue
 		}
 
+		if err := s.dispatchRaw(ctx, raw); err != nil {
+			s.logger.Debug("请求分发失败", logger.Field{Key: "error", Value: err.Error()})
+		}
+	}
+}
+
+func (s *MCPServer) dispatchRaw(ctx context.Context, raw json.RawMessage) error {
+	trimmed := strings.TrimSpace(string(raw))
+	if len(trimmed) == 0 {
+		return nil
+	}
+
+	if trimmed[0] == '[' {
+		var batch []json.RawMessage
+		if err := json.Unmarshal(raw, &batch); err != nil {
+			s.writeResponse(JSONRPCResponse{
+				JSONRPC: "2.0",
+				ID:      nil,
+				Error:   &RPCError{Code: -32700, Message: "Parse error: invalid batch request"},
+			})
+			return err
+		}
+		if len(batch) == 0 {
+			s.writeResponse(JSONRPCResponse{
+				JSONRPC: "2.0",
+				ID:      nil,
+				Error:   &RPCError{Code: -32600, Message: "Invalid Request: empty batch"},
+			})
+			return nil
+		}
+		for _, item := range batch {
+			_ = s.dispatchRaw(ctx, item)
+		}
+		return nil
+	}
+
+	var req JSONRPCRequest
+	if err := json.Unmarshal(raw, &req); err != nil {
+		s.writeResponse(JSONRPCResponse{
+			JSONRPC: "2.0",
+			ID:      nil,
+			Error:   &RPCError{Code: -32700, Message: "Parse error"},
+		})
+		return err
+	}
+
+	if s.isNotification(req) {
 		s.wg.Add(1)
 		go func(r JSONRPCRequest) {
 			defer s.wg.Done()
-			resp := s.handleRequest(ctx, r)
-			s.writeResponse(resp)
+			s.handleRequest(ctx, r)
 		}(req)
+		return nil
 	}
+
+	select {
+	case s.sem <- struct{}{}:
+	case <-ctx.Done():
+		s.writeResponse(JSONRPCResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32603, Message: "Server is shutting down"},
+		})
+		return ctx.Err()
+	}
+
+	s.wg.Add(1)
+	go func(r JSONRPCRequest) {
+		defer s.wg.Done()
+		defer func() { <-s.sem }()
+		resp := s.handleRequest(ctx, r)
+		s.writeResponse(resp)
+	}(req)
+
+	return nil
+}
+
+func (s *MCPServer) isNotification(req JSONRPCRequest) bool {
+	return req.ID == nil
 }
 
 func (s *MCPServer) handleRequest(ctx context.Context, req JSONRPCRequest) JSONRPCResponse {
 	switch req.Method {
 	case "initialize":
+		s.initMu.Lock()
+		s.initialized = true
+		s.initMu.Unlock()
 		return s.handleInitialize(req)
 	case "notifications/initialized":
 		s.logger.Debug("MCP 握手完成")
-		return JSONRPCResponse{JSONRPC: "2.0", ID: req.ID}
+		return JSONRPCResponse{}
+	case "notifications/cancelled":
+		s.logger.Debug("收到取消通知")
+		return JSONRPCResponse{}
+	case "ping":
+		return s.handlePing(req)
+	case "logging/setLevel":
+		if !s.isInitialized() {
+			return notInitializedResp(req.ID)
+		}
+		return s.handleSetLogLevel(req)
 	case "tools/list":
+		if !s.isInitialized() {
+			return notInitializedResp(req.ID)
+		}
 		return s.handleToolsList(req)
 	case "tools/call":
+		if !s.isInitialized() {
+			return notInitializedResp(req.ID)
+		}
 		return s.handleToolsCall(ctx, req)
 	default:
+		if s.isNotification(req) {
+			return JSONRPCResponse{}
+		}
 		return JSONRPCResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Error:   &RPCError{Code: -32601, Message: fmt.Sprintf("Method not found: %s", req.Method)},
 		}
+	}
+}
+
+func (s *MCPServer) isInitialized() bool {
+	s.initMu.Lock()
+	defer s.initMu.Unlock()
+	return s.initialized
+}
+
+func notInitializedResp(id interface{}) JSONRPCResponse {
+	return JSONRPCResponse{
+		JSONRPC: "2.0",
+		ID:      id,
+		Error:   &RPCError{Code: -32002, Message: "Server not initialized: send an initialize request first"},
 	}
 }
 
@@ -173,12 +288,62 @@ func (s *MCPServer) handleInitialize(req JSONRPCRequest) JSONRPCResponse {
 				"tools": map[string]interface{}{
 					"listChanged": false,
 				},
+				"logging": map[string]interface{}{},
 			},
 			"serverInfo": map[string]interface{}{
 				"name":    "mcp_images",
 				"version": Version,
 			},
 		},
+	}
+}
+
+func (s *MCPServer) handlePing(req JSONRPCRequest) JSONRPCResponse {
+	return JSONRPCResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  map[string]interface{}{},
+	}
+}
+
+func (s *MCPServer) handleSetLogLevel(req JSONRPCRequest) JSONRPCResponse {
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		return JSONRPCResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32602, Message: "Invalid params"},
+		}
+	}
+
+	var params struct {
+		Level string `json:"level"`
+	}
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		return JSONRPCResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32602, Message: "Invalid params"},
+		}
+	}
+
+	validLevels := map[string]bool{"debug": true, "info": true, "warn": true, "error": true}
+	if !validLevels[params.Level] {
+		return JSONRPCResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &RPCError{Code: -32602, Message: fmt.Sprintf("Invalid log level: %s (valid: debug, info, warn, error)", params.Level)},
+		}
+	}
+
+	if stderrLg, ok := s.logger.(*logger.StderrLogger); ok {
+		stderrLg.SetLevel(params.Level)
+	}
+
+	return JSONRPCResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  map[string]interface{}{},
 	}
 }
 
@@ -251,6 +416,10 @@ func (s *MCPServer) handleToolsCall(ctx context.Context, req JSONRPCRequest) JSO
 }
 
 func (s *MCPServer) writeResponse(resp JSONRPCResponse) {
+	if resp.JSONRPC == "" {
+		return
+	}
+
 	data, err := json.Marshal(resp)
 	if err != nil {
 		s.logger.Error("响应序列化失败", logger.Field{Key: "error", Value: err.Error()})

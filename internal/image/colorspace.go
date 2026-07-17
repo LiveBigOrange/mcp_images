@@ -35,16 +35,8 @@ func isOpaqueRGBA(rgba *image.RGBA) bool {
 }
 
 func hasAlpha(img image.Image, bounds image.Rectangle) bool {
-	dx := bounds.Dx()
-	if dx > 32 {
-		dx = 32
-	}
-
-	midY := bounds.Min.Y + bounds.Dy()/2
-	rows := []int{bounds.Min.Y, midY, bounds.Max.Y - 1}
-
-	for _, y := range rows {
-		for x := bounds.Min.X; x < bounds.Min.X+dx; x++ {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			_, _, _, a := img.At(x, y).RGBA()
 			if a != 65535 {
 				return true

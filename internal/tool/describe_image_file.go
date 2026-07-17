@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	imgproc "mcp_images/internal/image"
-	"mcp_images/internal/logger"
+
 	"mcp_images/internal/vlm"
 )
 
@@ -18,14 +18,12 @@ const maxPathLength = 4096
 type DescribeImageFile struct {
 	vlmClient *vlm.Client
 	processor *imgproc.Processor
-	logger    logger.Logger
 }
 
-func NewDescribeImageFile(vlmClient *vlm.Client, processor *imgproc.Processor, lg logger.Logger) *DescribeImageFile {
+func NewDescribeImageFile(vlmClient *vlm.Client, processor *imgproc.Processor) *DescribeImageFile {
 	return &DescribeImageFile{
 		vlmClient: vlmClient,
 		processor: processor,
-		logger:    lg,
 	}
 }
 
@@ -110,11 +108,21 @@ func validatePath(path string) error {
 	if !filepath.IsAbs(path) {
 		return fmt.Errorf("[路径错误] image_path 必须为绝对路径，当前为相对路径：%s", path)
 	}
-	for _, part := range strings.Split(path, string(filepath.Separator)) {
+
+	normalized := filepath.Clean(path)
+	for _, part := range strings.Split(normalized, string(filepath.Separator)) {
 		if part == ".." {
 			return fmt.Errorf("[路径错误] 图片路径不合法，禁止包含路径遍历字符（..）。")
 		}
 	}
+
+	cleaned := strings.ReplaceAll(path, "/", string(filepath.Separator))
+	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+		if part == ".." {
+			return fmt.Errorf("[路径错误] 图片路径不合法，禁止包含路径遍历字符（..）。")
+		}
+	}
+
 	if len(path) > maxPathLength {
 		return fmt.Errorf("[路径错误] 图片路径过长（超过 %d 字符）。", maxPathLength)
 	}
