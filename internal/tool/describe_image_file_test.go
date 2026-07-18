@@ -2,6 +2,8 @@ package tool
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -13,20 +15,22 @@ func TestValidatePath_Relative(t *testing.T) {
 }
 
 func TestValidatePath_Traversal(t *testing.T) {
-	if err := validatePath("/etc/../etc/passwd"); err == nil {
+	traversal := filepath.Join(string(filepath.Separator), "etc", "..", "etc", "passwd")
+	if err := validatePath(traversal); err == nil {
 		t.Fatal("expected error for path with ..")
 	}
 }
 
 func TestValidatePath_TooLong(t *testing.T) {
-	long := "/tmp/" + strings.Repeat("a", maxPathLength)
+	long := filepath.Join(string(filepath.Separator), "tmp", strings.Repeat("a", maxPathLength))
 	if err := validatePath(long); err == nil {
 		t.Fatal("expected error for over-long path")
 	}
 }
 
 func TestValidatePath_AbsoluteOK(t *testing.T) {
-	if err := validatePath("/tmp/image.png"); err != nil {
+	abs := filepath.Join(os.TempDir(), "image.png")
+	if err := validatePath(abs); err != nil {
 		t.Fatalf("unexpected error for valid absolute path: %v", err)
 	}
 }
