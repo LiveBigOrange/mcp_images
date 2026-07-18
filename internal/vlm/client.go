@@ -13,7 +13,7 @@ import (
 	"mcp_images/internal/logger"
 )
 
-const systemPrompt = `你是一个资深软件开发助理。请分析这张报错、代码或 UI 截图，并输出极其精准的结构化描述：
+const defaultSystemPrompt = `你是一个资深软件开发助理。请分析这张报错、代码或 UI 截图，并输出极其精准的结构化描述：
 1. ERROR_INFO: 提取任何精确的报错文本、调用栈信息、Traceback 或日志。如果不是报错图，请忽略此项。
 2. VISUAL_DESC: 用精准的开发术语描述你看到的 UI 问题、样式重叠、网络请求图表、架构设计等视觉表现形式。
 3. ENV_CONTEXT: 根据截图特征猜测开发者当前的运行环境（例如：VS Code 编辑器、Linux 终端、Chrome 控制台等）。
@@ -91,13 +91,17 @@ func NewClient(cfg *config.Config, lg logger.Logger) *Client {
 }
 
 func BuildRequest(cfg *config.Config, imageDataURI string) *VLMRequest {
+	prompt := cfg.SystemPrompt
+	if prompt == "" {
+		prompt = defaultSystemPrompt
+	}
 	return &VLMRequest{
 		Model: cfg.Model,
 		Messages: []VLMMessage{
 			{
 				Role: "system",
 				Content: []VLMContent{
-					{Type: "text", Text: systemPrompt},
+					{Type: "text", Text: prompt},
 				},
 			},
 			{

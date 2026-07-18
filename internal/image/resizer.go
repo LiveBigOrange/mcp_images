@@ -9,21 +9,28 @@ import (
 const maxDimension = 2048
 
 func ResizeIfNeeded(img image.Image, dataSize int) image.Image {
+	return ResizeIfNeededWithMax(img, dataSize, maxDimension)
+}
+
+func ResizeIfNeededWithMax(img image.Image, dataSize int, maxDim int) image.Image {
+	if maxDim <= 0 {
+		maxDim = maxDimension
+	}
 	bounds := img.Bounds()
 	w := bounds.Dx()
 	h := bounds.Dy()
 
-	if w <= maxDimension && h <= maxDimension && dataSize <= 5*1024*1024 {
+	if w <= maxDim && h <= maxDim && dataSize <= 5*1024*1024 {
 		return img
 	}
 
 	var newW, newH int
 	if w > h {
-		newW = maxDimension
-		newH = h * maxDimension / w
+		newW = maxDim
+		newH = h * maxDim / w
 	} else {
-		newH = maxDimension
-		newW = w * maxDimension / h
+		newH = maxDim
+		newW = w * maxDim / h
 	}
 
 	if newW > w {

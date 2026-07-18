@@ -2,6 +2,7 @@ package image
 
 import (
 	"bytes"
+	"context"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -13,7 +14,7 @@ func TestProcessor_Process_JPEG(t *testing.T) {
 	data := encodeTestJPEG(img)
 
 	p := NewProcessor()
-	dataURI, err := p.Process(data, "jpeg")
+	dataURI, err := p.Process(context.Background(), data, "jpeg")
 	if err != nil {
 		t.Fatalf("Process failed: %v", err)
 	}
@@ -24,7 +25,7 @@ func TestProcessor_Process_JPEG(t *testing.T) {
 
 func TestProcessor_Process_InvalidData(t *testing.T) {
 	p := NewProcessor()
-	_, err := p.Process([]byte("not an image"), "")
+	_, err := p.Process(context.Background(), []byte("not an image"), "")
 	if err == nil {
 		t.Fatal("expected error for invalid data")
 	}

@@ -91,7 +91,7 @@ func (t *DescribeImageFile) Execute(ctx context.Context, args map[string]interfa
 		return "", fmt.Errorf("[文件错误] 读取文件失败：%v", err)
 	}
 
-	dataURI, err := t.processor.Process(data, "")
+	dataURI, err := t.processor.Process(ctx, data, "")
 	if err != nil {
 		return "", err
 	}

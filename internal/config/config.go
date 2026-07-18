@@ -8,24 +8,35 @@ import (
 )
 
 type Config struct {
-	APIBase  string
-	APIKey   string
-	Model    string
-	LogLevel string
-	Timeout  int // VLM HTTP 超时（秒），默认 60
+	APIBase      string
+	APIKey       string
+	Model        string
+	LogLevel     string
+	Timeout      int // VLM HTTP 超时（秒），默认 60
+	SystemPrompt string
+	MaxDimension int // 缩放阈值（像素），默认 2048
 }
+
+const defaultMaxDimension = 2048
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		APIBase:  strings.TrimSpace(os.Getenv("VLM_API_BASE")),
-		APIKey:   strings.TrimSpace(os.Getenv("VLM_API_KEY")),
-		Model:    strings.TrimSpace(os.Getenv("VLM_MODEL")),
-		LogLevel: strings.TrimSpace(os.Getenv("VLM_LOG_LEVEL")),
-		Timeout:  60,
+		APIBase:      strings.TrimSpace(os.Getenv("VLM_API_BASE")),
+		APIKey:       strings.TrimSpace(os.Getenv("VLM_API_KEY")),
+		Model:        strings.TrimSpace(os.Getenv("VLM_MODEL")),
+		LogLevel:     strings.TrimSpace(os.Getenv("VLM_LOG_LEVEL")),
+		SystemPrompt: strings.TrimSpace(os.Getenv("VLM_SYSTEM_PROMPT")),
+		Timeout:      60,
+		MaxDimension: defaultMaxDimension,
 	}
 	if t := strings.TrimSpace(os.Getenv("VLM_TIMEOUT")); t != "" {
 		if v, err := strconv.Atoi(t); err == nil && v > 0 {
 			cfg.Timeout = v
+		}
+	}
+	if md := strings.TrimSpace(os.Getenv("VLM_MAX_DIMENSION")); md != "" {
+		if v, err := strconv.Atoi(md); err == nil && v >= 64 && v <= 16384 {
+			cfg.MaxDimension = v
 		}
 	}
 	return cfg, nil

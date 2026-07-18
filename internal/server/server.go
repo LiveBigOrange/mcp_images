@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -64,13 +65,14 @@ type MCPServer struct {
 	wg       sync.WaitGroup
 
 	writeMu     sync.Mutex
+	stdoutW     *bufio.Writer
 	sem         chan struct{}
 	initialized bool
 	initMu      sync.Mutex
 }
 
 func NewServer(cfg *config.Config, lg logger.Logger) *MCPServer {
-	processor := imgproc.NewProcessor()
+	processor := imgproc.NewProcessorWithMax(cfg.MaxDimension)
 	vlmClient := vlm.NewClient(cfg, lg)
 	clipReader := clipboard.NewReader(lg)
 
@@ -84,6 +86,7 @@ func NewServer(cfg *config.Config, lg logger.Logger) *MCPServer {
 		logger:   lg,
 		registry: registry,
 		sem:      make(chan struct{}, maxConcurrentRequests),
+		stdoutW:  bufio.NewWriterSize(os.Stdout, 64*1024),
 	}
 }
 
@@ -426,7 +429,9 @@ func (s *MCPServer) writeResponse(resp JSONRPCResponse) {
 		return
 	}
 	s.writeMu.Lock()
-	fmt.Println(string(data))
+	s.stdoutW.Write(data)
+	s.stdoutW.WriteByte('\n')
+	s.stdoutW.Flush()
 	s.writeMu.Unlock()
 }
 

@@ -1,4 +1,4 @@
-DEFAULT_VERSION = 0.1.0
+DEFAULT_VERSION = 0.2.0
 VERSION ?= $(or $(shell cat VERSION 2>/dev/null),$(DEFAULT_VERSION))
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS = -s -w -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)

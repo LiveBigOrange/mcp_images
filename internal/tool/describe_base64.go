@@ -92,7 +92,7 @@ func (t *DescribeBase64Image) Execute(ctx context.Context, args map[string]inter
 		formatHint = normalized
 	}
 
-	dataURI, err := t.processor.Process(data, formatHint)
+	dataURI, err := t.processor.Process(ctx, data, formatHint)
 	if err != nil {
 		return "", err
 	}

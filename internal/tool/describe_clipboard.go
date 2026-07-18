@@ -49,7 +49,7 @@ func (t *DescribeClipboardImage) Execute(ctx context.Context, args map[string]in
 		return "", err
 	}
 
-	dataURI, err := t.processor.Process(data, "png")
+	dataURI, err := t.processor.Process(ctx, data, "png")
 	if err != nil {
 		return "", err
 	}
